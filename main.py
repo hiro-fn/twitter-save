@@ -77,7 +77,7 @@ class StreamListener(StreamListener):
 
 auth = get_oauth()
 lines = get_userlist()
-#co = set_database()
+co = set_database()
 stream = Stream(auth, StreamListener(), secure = True)
 print "Start Streaming!"
 try:
