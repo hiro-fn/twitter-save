@@ -45,6 +45,17 @@ class StreamListener(StreamListener):
             if status.entities.has_key('media'):
                 for line in lines:
                     if line.find(status.author.screen_name) >= 0:
+
+                        # text save
+                        try:
+                            print u"{0}@{1}".format(status.author.screen_name, status.text)
+                            tweet_json = status._json
+                            co.insert_one(tweet_json)
+                        except Exception as e:
+                            print e
+                            pass
+
+                        # image save
                         if status.entities.has_key('media'):
                             medias = status.entities['media']
                             m = medias[0]
@@ -63,14 +74,6 @@ class StreamListener(StreamListener):
                                 urllib.urlretrieve(media_url, filename)
                             except IOError:
                                 print "Image Save Failed : {0}".format(media_url)
-
-                        try:
-                            print u"{0}@{1}".format(status.author.screen_name, status.text)
-                            tweet_json = status._json
-                            co.insert_one(tweet_json)
-                        except Exception as e:
-                            print e
-                            pass
 
     def on_timeout(self):
         return True
