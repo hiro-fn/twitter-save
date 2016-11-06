@@ -7,6 +7,7 @@ import urllib
 import datetime
 import argparse
 import pymongo
+
 parser = argparse.ArgumentParser(description='Twitter Saver')
 parser.add_argument('--config', '-c', required=True, type=str, help='config path')
 parser.add_argument('--list', '-l', required=True, type=str, help='user list path')
@@ -42,38 +43,39 @@ def set_database():
 class StreamListener(StreamListener):
     def on_status(self, status):
         if not status.entities.has_key('retweeted_status'):
-            if status.entities.has_key('media'):
-                for line in lines:
-                    if line.find(status.author.screen_name) >= 0:
+            for line in lines:
+                if line.find(status.author.screen_name) >= 0:
 
-                        # text save
+                    # text save
+                    try:
+                        print u"{0}@{1}".format(status.author.screen_name, status.text)
+                        tweet_json = status._json
+                        co.insert_one(tweet_json)
+                    except Exception as e:
+                        print e
+                        pass
+
+                    # image save
+                    if status.entities.has_key('media'):
+                        medias = status.entities['media']
+                        m = medias[0]
+                        media_url = m['media_url']
+                        print u"MediaURL : {0}".format(media_url)
+                        now = datetime.datetime.now()
+                        time = now.strftime("%H%M%S")
+                        filedir = './download/{}'.format(status.author.screen_name)
                         try:
-                            print u"{0}@{1}".format(status.author.screen_name, status.text)
-                            tweet_json = status._json
-                            co.insert_one(tweet_json)
-                        except Exception as e:
-                            print e
+                            os.makedirs(filedir)
+                        except OSError:
                             pass
+                        filename = os.path.join(filedir, '{}.jpg'.format(status.id))
+                        print u"Save File : {0}".format(filename)
+                        try:
+                            urllib.urlretrieve(media_url, filename)
+                        except IOError:
+                            print "Image Save Failed : {0}".format(media_url)
 
-                        # image save
-                        if status.entities.has_key('media'):
-                            medias = status.entities['media']
-                            m = medias[0]
-                            media_url = m['media_url']
-                            print media_url
-                            now = datetime.datetime.now()
-                            time = now.strftime("%H%M%S")
-                            filedir = './download/{}'.format(status.author.screen_name)
-                            try:
-                                os.makedirs(filedir)
-                            except OSError:
-                                pass
-                            filename = os.path.join(filedir, '{}.jpg'.format(status.id))
-                            print filename
-                            try:
-                                urllib.urlretrieve(media_url, filename)
-                            except IOError:
-                                print "Image Save Failed : {0}".format(media_url)
+                    print "\n"
 
     def on_timeout(self):
         return True
