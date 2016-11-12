@@ -46,47 +46,71 @@ class StreamListener(StreamListener):
             for line in lines:
                 if line.find(status.author.screen_name) >= 0:
 
-                    # text save
-                    try:
-                        print u"{0}@{1}".format(status.author.screen_name, status.text)
-                        tweet_json = status._json
-                        co.insert_one(tweet_json)
-                    except Exception as e:
-                        print e
-                        pass
+					# text save
+					try:
+						#print u"{0}@{1}".format(status.author.screen_name, status.text)
+						tweet_json = status._json
+						co.insert_one(tweet_json)
+					except Exception as e:
+						print e
+						pass
 
-                    # image save
-                    if status.entities.has_key('media'):
-                        medias = status.entities['media']
-                        m = medias[0]
-                        media_url = m['media_url']
-                        print u"MediaURL : {0}".format(media_url)
-                        now = datetime.datetime.now()
-                        time = now.strftime("%H%M%S")
-                        filedir = './download/{}'.format(status.author.screen_name)
-                        try:
-                            os.makedirs(filedir)
-                        except OSError:
-                            pass
-                        filename = os.path.join(filedir, '{}.jpg'.format(status.id))
-                        print u"Save File : {0}".format(filename)
-                        try:
-                            urllib.urlretrieve(media_url, filename)
-                        except IOError:
-                            print "Image Save Failed : {0}".format(media_url)
+					# image save
+					if status.entities.has_key('media'):
+						medias = status.entities['media']
+						m = medias[0]
+						media_url = m['media_url']
+						print u"MediaURL : {0}".format(media_url)
+						now = datetime.datetime.now()
+						time = now.strftime("%H%M%S")
+						filedir = './download/{}'.format(status.author.screen_name)
+						try:
+							os.makedirs(filedir)
+						except OSError:
+							pass
+						filename = os.path.join(filedir, '{}.jpg'.format(status.id))
+						print u"Save File : {0}".format(filename)
+						try:
+							urllib.urlretrieve(media_url, filename)
+						except IOError:
+							print "Image Save Failed : {0}".format(media_url)
 
-                    print "\n"
+					#print "\n"
 
-    def on_timeout(self):
-        return True
+	def on_connect(self):
+		print "Connect"
+		return
+
+	def on_disconnect(self, notice):
+		print "DisConnect, " + str(notice.code)
+		return
+
+	def on_error(self, status_code):
+		print "Error with status code" + str(status_code)
+		return True
+
+	def on_timeout(self):
+		print "on timeout"
+		return True
 
 auth = get_oauth()
 lines = get_userlist()
 co = set_database()
-stream = Stream(auth, StreamListener(), secure = True)
 print "Start Streaming!"
 try:
     os.makedirs('./download')
 except:
     pass
-stream.userstream()
+
+while True:
+	try:
+		stream = Stream(auth, StreamListener(), secure = True)
+		stream.userstream()
+
+	except KeyboardInterrupt:
+		break
+
+	except Exception as e:
+		print e
+		pass
+
